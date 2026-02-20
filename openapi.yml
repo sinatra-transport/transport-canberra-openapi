@@ -1,0 +1,198 @@
+openapi: 3.0.3
+info:
+  title: Transport Canberra GTFS API
+  version: 1.0.0
+  description: |
+    This API provides access to the General Transit Feed Specification (GTFS) data
+    for Transport Canberra services in the ACT. It includes both Static (GTFS-S) and
+    Real-time (GTFS-R) data flows for the Transport Canberra Bus service.
+
+    Content aligns with the GTFS standard as defined at https://gtfs.org/schedule/reference/.
+  contact:
+    name: Transport Canberra Developer Support
+    url: https://anypoint.mulesoft.com/exchange/portals/act-government-9/
+  license:
+    name: Creative Commons Attribution 4.0
+    url: https://creativecommons.org/licenses/by/4.0/
+
+servers:
+  - url: https://transport.api.act.gov.au
+    description: Production environment
+  - url: https://transport.api.test.act.gov.au
+    description: Test environment
+
+security:
+  - basicAuth: []
+
+tags:
+  - name: GTFS Static
+    description: |
+      Static GTFS feed containing scheduled timetables, stop locations, and route information.
+      Data conforms to the GTFS Schedule specification (https://gtfs.org/schedule/reference/).
+  - name: GTFS Realtime
+    description: |
+      Real-time GTFS feeds providing live trip updates, vehicle positions, and service alerts.
+      Data is returned in protobuf binary format conforming to the GTFS Realtime specification
+      (https://gtfs.org/realtime/reference/).
+
+paths:
+  /gtfs/data/gtfs/v2/gtfs.zip:
+    get:
+      summary: Download complete GTFS Static Feed
+      operationId: getGtfsStaticFeed
+      tags:
+        - GTFS Static
+      description: |
+        Returns a ZIP archive containing the complete GTFS Static feed for Transport Canberra
+        bus services. The ZIP file includes the standard GTFS text files:
+
+        - **agency.txt** - Transit agency information
+        - **areas.txt** - Defines area identifiers (empty)
+        - **calendar_dates.txt** - Exceptions to the default service schedule
+        - **calendar.txt** - Service schedules by day of the week
+        - **feed_info.txt** - The file contains information about the dataset itself, rather than the services that the dataset describes. In some cases, the publisher of the dataset is a different entity than any of the agencies
+        - **routes.txt** - Route definitions
+        - **shapes.txt** - Shapes describe the path that a vehicle travels along a route alignment, and are defined in the file shapes.txt
+        - **stop_areas.txt** - Assigns stops from stops.txt to areas (empty)
+        - **stop_times.txt** - Arrival and departure times at stops for each trip
+        - **stops.txt** - Stop locations and attributes
+        - **trips.txt** - Trips for each route
+
+        Stops affixed with "SSO" only serve school routes. Routes numbered >= 1000 are school routes.
+      responses:
+        '200':
+          description: GTFS Static ZIP archive successfully returned.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              example: attachment; filename="google_transit.zip"
+            Last-Modified:
+              schema:
+                type: string
+                format: date-time
+              description: The date and time the feed was last updated.
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+                description: A ZIP file containing GTFS static feed text files.
+  /gtfs/data/gtfs/v2/google_transit.zip:
+    get:
+      summary: Download GTFS Static Feed excluding school trips
+      operationId: getGoogleTransitStaticFeed
+      tags:
+        - GTFS Static
+      description: |
+        Returns a ZIP archive containing the GTFS Static feed for Transport Canberra **excluding school trips**. 
+        The ZIP file includes the standard GTFS text files:
+
+        - **agency.txt** - Transit agency information
+        - **areas.txt** - Defines area identifiers (empty)
+        - **calendar_dates.txt** - Exceptions to the default service schedule
+        - **calendar.txt** - Service schedules by day of the week
+        - **feed_info.txt** - The file contains information about the dataset itself, rather than the services that the dataset describes. In some cases, the publisher of the dataset is a different entity than any of the agencies
+        - **routes.txt** - Route definitions
+        - **shapes.txt** - Shapes describe the path that a vehicle travels along a route alignment, and are defined in the file shapes.txt
+        - **stop_areas.txt** - Assigns stops from stops.txt to areas (empty)
+        - **stop_times.txt** - Arrival and departure times at stops for each trip
+        - **stops.txt** - Stop locations and attributes
+        - **trips.txt** - Trips for each route
+
+        Stops affixed with "SSO" only serve school routes. Routes numbered >= 1000 are school routes.
+      responses:
+        '200':
+          description: GTFS Static ZIP archive successfully returned.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              example: attachment; filename="google_transit.zip"
+            Last-Modified:
+              schema:
+                type: string
+                format: date-time
+              description: The date and time the feed was last updated.
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+                description: A ZIP file containing GTFS static feed text files.
+  /gtfs/realtime/v2/tripupdates:
+    get:
+      summary: Get GTFS Realtime Trip Updates
+      operationId: getGtfsRealtimeTripUpdates
+      tags:
+        - GTFS Realtime
+      description: |
+        Returns real-time trip update information for Transport Canberra bus services in
+        GTFS Realtime protobuf format.
+      responses:
+        '200':
+          description: GTFS Realtime Trip Updates feed returned successfully.
+          content:
+            application/x-protobuf:
+              schema:
+                type: string
+                format: binary
+                description: |
+                  A binary protobuf-encoded `FeedMessage` containing `TripUpdate` entities.
+                  Decode using the GTFS Realtime `.proto` schema available at
+                  https://gtfs.org/realtime/proto/.
+  /gtfs/realtime/v2/vehiclepositions:
+    get:
+      summary: Get GTFS Realtime Vehicle Positions
+      operationId: getGtfsRealtimeVehiclePositions
+      tags:
+        - GTFS Realtime
+      description: |
+        Returns real-time vehicle position information for Transport Canberra bus services
+        in GTFS Realtime protobuf format.
+      responses:
+        '200':
+          description: GTFS Realtime Vehicle Positions feed returned successfully.
+          content:
+            application/x-protobuf:
+              schema:
+                type: string
+                format: binary
+                description: |
+                  A binary protobuf-encoded `FeedMessage` containing `VehiclePosition` entities.
+                  Decode using the GTFS Realtime `.proto` schema available at
+                  https://gtfs.org/realtime/proto/.
+  /gtfs/realtime/v2/alerts:
+    get:
+      summary: Get GTFS Realtime Service Alerts
+      operationId: getGtfsRealtimeAlerts
+      tags:
+        - GTFS Realtime
+      description: |
+        Returns real-time service alert information for Transport Canberra bus services
+        in GTFS Realtime protobuf format.
+      responses:
+        '200':
+          description: GTFS Realtime Service Alerts feed returned successfully.
+          content:
+            application/x-protobuf:
+              schema:
+                type: string
+                format: binary
+                description: |
+                  A binary protobuf-encoded `FeedMessage` containing `Alert` entities.
+                  Decode using the GTFS Realtime `.proto` schema available at
+                  https://gtfs.org/realtime/proto/.
+
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+      description: |
+        Base64-encoded `client_id:client_secret` credentials obtained from the Transport
+        Canberra developer portal. Encode using UTF-8 in the form `client_id:client_secret`
+        before Base64 encoding, then pass as:
+        ```
+        Authorization: Basic <base64-encoded-string>
+        ```
